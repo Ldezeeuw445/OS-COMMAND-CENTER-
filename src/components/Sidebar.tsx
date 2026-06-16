@@ -11,7 +11,6 @@ import {
   Settings,
   TrendingUp,
   Users,
-  Zap,
 } from "lucide-react";
 
 const navSections = [
@@ -50,12 +49,14 @@ export default function Sidebar() {
     <div className="flex w-[210px] flex-shrink-0 flex-col border-r border-white/[0.04] bg-[#0d0d0d]">
       <div className="border-b border-white/[0.04] px-3 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded border border-cyan-500/20 bg-gradient-to-br from-cyan-500/20 to-purple-500/20">
-            <Zap size={14} className="text-[#06b6d4]" />
-          </div>
+          <img
+            src="./axe-logo-square.png"
+            alt="AXE logo"
+            className="h-7 w-7 rounded border border-cyan-500/20 object-cover"
+          />
           <div>
             <div className="text-[11px] font-bold tracking-wide text-white/80">
-              OS Command
+              AXE Command
             </div>
             <div className="text-[8px] tracking-wider text-white/30">CENTER</div>
           </div>

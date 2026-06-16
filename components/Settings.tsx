@@ -39,7 +39,7 @@ const secretEnvKeys = [
 
 export default function SettingsPage() {
   const { mode, setMode } = useDataMode();
-  const panelStatus = mode === 'live' ? 'MISSING_CONFIG' : mode === 'hybrid' ? 'DEMO' : 'DEMO';
+  const panelStatus = mode === 'live' ? 'LIVE' : 'PENDING';
   const integrationApi = useIntegrationStatuses(mode);
   const [activeTab, setActiveTab] = useState('flags');
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -83,7 +83,7 @@ export default function SettingsPage() {
           <div>
             <h3 className="text-xs font-semibold text-white/70">Global Data Mode</h3>
             <p className="text-[9px] text-white/30 mt-0.5">
-              Live mode will never show demo metrics. Missing integrations become pending/missing_config.
+              Command Center runs in real-only mode. No demo/mock operational data is shown.
             </p>
           </div>
           <select
@@ -91,8 +91,6 @@ export default function SettingsPage() {
             onChange={(e) => setMode(e.target.value as any)}
             className="bg-white/[0.03] border border-white/[0.08] rounded-md px-3 py-1.5 text-[11px] text-white/60 outline-none"
           >
-            <option value="demo">demo</option>
-            <option value="hybrid">hybrid</option>
             <option value="live">live</option>
           </select>
         </div>
@@ -178,9 +176,9 @@ export default function SettingsPage() {
               Open this dashboard in Safari/Chrome and use Add to Home Screen. PWA manifest + app icon are enabled.
             </p>
             <div className="mt-2 flex items-center gap-2">
-              <img src="./oscc-icon-192.png" alt="OS Command Center logo" className="h-8 w-8 rounded" />
+              <img src="./axe-icon-192.png" alt="AXE Command Center logo" className="h-8 w-8 rounded" />
               <div className="text-[10px] text-white/45">
-                App name: <span className="text-white/65">OS Command Center</span>
+                App name: <span className="text-white/65">AXE Command Center</span>
               </div>
             </div>
           </div>

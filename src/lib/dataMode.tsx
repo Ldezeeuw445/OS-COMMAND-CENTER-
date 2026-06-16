@@ -11,10 +11,10 @@ const DataModeContext = createContext<DataModeContextValue | null>(null);
 const STORAGE_KEY = "oscc.dataMode.v1";
 
 function readInitialMode(): DataMode {
-  if (typeof window === "undefined") return "demo";
+  if (typeof window === "undefined") return "live";
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (raw === "live" || raw === "demo" || raw === "hybrid") return raw;
-  return "demo";
+  if (raw === "live") return raw;
+  return "live";
 }
 
 export function DataModeProvider({ children }: { children: React.ReactNode }) {
