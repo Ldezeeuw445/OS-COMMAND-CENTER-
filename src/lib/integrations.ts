@@ -8,6 +8,7 @@ export type IntegrationId =
   | "metaapi"
   | "vercel"
   | "github"
+  | "axe_companion"
   | "axe_core";
 
 export type IntegrationInfo = {
@@ -29,6 +30,12 @@ export const integrations: IntegrationInfo[] = [
   { id: "metaapi", label: "MetaApi / MT5", scope: "Server Room", notes: "Sync health, connection mode, errors." },
   { id: "vercel", label: "Vercel", scope: "Releases", notes: "Deployments, build status, logs links." },
   { id: "github", label: "GitHub", scope: "Releases", notes: "Commits, releases, checks." },
+  {
+    id: "axe_companion",
+    label: "AXE Companion Runtime",
+    scope: "Products",
+    notes: "Gateway/API link to the AXE Companion runtime environment.",
+  },
   { id: "axe_core", label: "AXE Core Logs", scope: "Agent Offices", notes: "Agent runs/prompts/tool policy must come from AXE Core." },
 ];
 

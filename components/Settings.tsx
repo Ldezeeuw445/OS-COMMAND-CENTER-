@@ -26,6 +26,17 @@ const auditLogs = [
   { action: 'Release Deployed', details: 'v2.4.1 → production environment', admin: 'github-actions', ip: '10.0.0.2', time: '2024-01-15 14:00:00' },
 ];
 
+const secretEnvKeys = [
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'AXE_CORE_LOGS_TOKEN',
+  'AXE_COMPANION_API_TOKEN',
+  'STRIPE_SECRET_KEY',
+  'GITHUB_TOKEN',
+  'VERCEL_TOKEN',
+  'CLOUDFLARE_API_TOKEN',
+  'METAAPI_TOKEN',
+];
+
 export default function SettingsPage() {
   const { mode, setMode } = useDataMode();
   const panelStatus = mode === 'live' ? 'MISSING_CONFIG' : mode === 'hybrid' ? 'DEMO' : 'DEMO';
@@ -157,6 +168,37 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+      </div>
+
+      <div className="panel" data-status={panelStatus}>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded bg-white/[0.02] border border-white/[0.04] p-3">
+            <h3 className="text-xs font-semibold text-white/70">Install As App</h3>
+            <p className="mt-1 text-[10px] text-white/35">
+              Open this dashboard in Safari/Chrome and use Add to Home Screen. PWA manifest + app icon are enabled.
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <img src="./oscc-icon-192.png" alt="OS Command Center logo" className="h-8 w-8 rounded" />
+              <div className="text-[10px] text-white/45">
+                App name: <span className="text-white/65">OS Command Center</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded bg-white/[0.02] border border-white/[0.04] p-3">
+            <h3 className="text-xs font-semibold text-white/70">Secrets Safety</h3>
+            <p className="mt-1 text-[10px] text-white/35">
+              Keep all tokens server-side only. Never expose secrets in browser env variables.
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-1">
+              {secretEnvKeys.map((key) => (
+                <span key={key} className="rounded border border-white/[0.06] bg-white/[0.03] px-1.5 py-1 text-[9px] font-mono text-white/50">
+                  {key}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}

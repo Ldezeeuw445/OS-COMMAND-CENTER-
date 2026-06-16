@@ -31,6 +31,7 @@ function integrationResult(id) {
     vercel: ["VERCEL_TOKEN"],
     cloudflare: ["CLOUDFLARE_API_TOKEN"],
     metaapi: ["METAAPI_TOKEN"],
+    axe_companion: ["AXE_COMPANION_API_URL", "AXE_COMPANION_API_TOKEN"],
     axe_core: ["AXE_CORE_LOGS_ENDPOINT", "AXE_CORE_LOGS_TOKEN"],
   };
 
@@ -71,6 +72,7 @@ const server = http.createServer((req, res) => {
         "vercel",
         "cloudflare",
         "metaapi",
+        "axe_companion",
         "axe_core",
       ];
       return json(res, 200, {
