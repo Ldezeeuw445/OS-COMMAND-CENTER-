@@ -10,6 +10,7 @@ import Support from "./pages/Support";
 import Growth from "./pages/Growth";
 import Users from "./pages/Users";
 import Releases from "./pages/Releases";
+import McpHub from "./pages/McpHub";
 import Settings from "./pages/Settings";
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/growth" element={<Growth />} />
             <Route path="/users" element={<Users />} />
             <Route path="/releases" element={<Releases />} />
+            <Route path="/mcp-hub" element={<McpHub />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>

@@ -12,7 +12,13 @@ import {
   Settings,
   ChevronRight,
   Zap,
+  PlugZap,
 } from "lucide-react";
+
+type SidebarProps = {
+  className?: string;
+  onNavigate?: () => void;
+};
 
 const navSections = [
   {
@@ -40,15 +46,18 @@ const navSections = [
     title: "SYSTEM",
     items: [
       { to: "/releases", icon: GitBranch, label: "Releases" },
+      { to: "/mcp-hub", icon: PlugZap, label: "MCP Hub" },
       { to: "/settings", icon: Settings, label: "Settings" },
     ],
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ className = "", onNavigate }: SidebarProps) {
   return (
-    <aside className="w-[210px] h-full min-h-0 self-stretch bg-[#12151b] border-r border-white/[0.08] flex flex-col flex-shrink-0 shadow-[inset_-1px_0_0_rgba(255,255,255,0.035)]">
-      <div className="px-3 py-3 border-b border-white/[0.08]">
+    <aside
+      className={`w-[210px] h-full min-h-full self-stretch bg-[#0d1118] border-r border-white/[0.06] flex flex-col flex-shrink-0 shadow-[inset_-1px_0_0_rgba(255,255,255,0.03),inset_-2px_0_18px_rgba(6,182,212,0.18)] ${className}`}
+    >
+      <div className="px-3 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/20 flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
             <Zap size={14} className="text-[#06b6d4]" />
@@ -74,11 +83,12 @@ export default function Sidebar() {
                     key={item.to}
                     to={item.to}
                     end={item.to === "/"}
+                    onClick={() => onNavigate?.()}
                     className={({ isActive }) =>
                       `flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[11px] transition-all ${
                         isActive
-                          ? "border border-white/25 bg-white/[0.09] text-cyan-300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                          : "text-white/45 hover:text-white/75 hover:bg-white/[0.05]"
+                          ? "border border-cyan-400/30 bg-cyan-500/[0.08] text-cyan-300 shadow-[inset_0_0_0_1px_rgba(6,182,212,0.2)]"
+                          : "text-white/45 hover:text-white/75 hover:bg-white/[0.03]"
                       }`
                     }
                   >
@@ -92,8 +102,8 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-2 border-t border-white/[0.08]">
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.02] cursor-pointer transition-colors">
+      <div className="p-2 border-t border-white/[0.06]">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.03] cursor-pointer transition-colors">
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
             <span className="text-[8px] font-bold text-cyan-400">A</span>
           </div>

@@ -44,9 +44,16 @@
   }
 
   body {
-    @apply bg-[#0f1115] text-white/90 antialiased;
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 38%);
+    @apply bg-[#090d16] text-white/90 antialiased;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0%, rgba(255, 255, 255, 0) 45%);
     font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100dvh;
+    height: 100%;
   }
 }
 
@@ -64,20 +71,38 @@
     @apply bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-colors;
   }
   .panel {
-    @apply rounded-lg border border-white/[0.12] bg-gradient-to-b from-white/[0.06] to-white/[0.025] p-2;
+    @apply rounded-lg border border-white/[0.10] bg-gradient-to-b from-white/[0.045] to-white/[0.018] p-2;
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.035),
-      0 1px 0 rgba(255, 255, 255, 0.02);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+      0 1px 0 rgba(255, 255, 255, 0.015);
     transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
   }
 
   .panel:hover {
-    border-color: rgba(255, 255, 255, 0.24);
+    border-color: rgba(255, 255, 255, 0.2);
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.07),
-      0 0 0 1px rgba(255, 255, 255, 0.05),
-      0 0 16px rgba(255, 255, 255, 0.04);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.045),
+      0 0 0 1px rgba(255, 255, 255, 0.03),
+      0 0 14px rgba(6, 182, 212, 0.08);
   }
+}
+
+.op-grid-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(6, 182, 212, 0.18) 0%, rgba(6, 182, 212, 0.1) 12%, rgba(6, 182, 212, 0) 32%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1.2px);
+  background-size:
+    100% 100%,
+    22px 22px;
+  background-position:
+    0 0,
+    0 0;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.25));
+  opacity: 0.55;
 }
 
 /* Data status overlay for any panel.

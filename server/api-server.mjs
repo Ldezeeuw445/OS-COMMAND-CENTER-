@@ -545,6 +545,146 @@ async function runAssistant(message) {
   };
 }
 
+function mcpConnections() {
+  return [
+    {
+      id: "supabase",
+      label: "Supabase",
+      configured: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+      requiredEnv: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
+      actions: ["recheck", "list-auth-users-sample"],
+    },
+    {
+      id: "github",
+      label: "GitHub",
+      configured: Boolean(process.env.GITHUB_TOKEN),
+      requiredEnv: ["GITHUB_TOKEN"],
+      actions: ["recheck", "list-repos"],
+    },
+    {
+      id: "vercel",
+      label: "Vercel",
+      configured: Boolean(process.env.VERCEL_TOKEN),
+      requiredEnv: ["VERCEL_TOKEN"],
+      actions: ["recheck", "list-projects"],
+    },
+    {
+      id: "railway",
+      label: "Railway",
+      configured: Boolean(process.env.RAILWAY_TOKEN),
+      requiredEnv: ["RAILWAY_TOKEN"],
+      actions: ["recheck", "list-projects"],
+    },
+  ];
+}
+
+async function runMcpAction(provider, action, params = {}) {
+  if (provider === "supabase") {
+    if (action === "recheck") return await integrationResult("supabase_admin");
+    if (action === "list-auth-users-sample") {
+      const missing = integrationMissing("supabase_admin", ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
+      if (missing) return missing;
+      const base = process.env.SUPABASE_URL.replace(/\/+$/, "");
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const perPage = Math.min(Math.max(Number(params?.limit || 5), 1), 20);
+      const res = await fetchJson(`${base}/auth/v1/admin/users?page=1&per_page=${perPage}`, {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+      });
+      if (!res.ok) return integrationError("supabase_admin", `Supabase users fetch failed (${res.status})`);
+      const users = Array.isArray(res.body?.users) ? res.body.users : [];
+      return integrationOk("supabase_admin", {
+        count: users.length,
+        users: users.map((u) => ({ id: u?.id, email: u?.email, created_at: u?.created_at })),
+      });
+    }
+  }
+
+  if (provider === "github") {
+    if (action === "recheck") return await integrationResult("github");
+    if (action === "list-repos") {
+      const missing = integrationMissing("github", ["GITHUB_TOKEN"]);
+      if (missing) return missing;
+      const perPage = Math.min(Math.max(Number(params?.limit || 10), 1), 50);
+      const res = await fetchJson(`https://api.github.com/user/repos?per_page=${perPage}&sort=updated`, {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          Accept: "application/vnd.github+json",
+          "User-Agent": "os-command-center",
+        },
+      });
+      if (!res.ok) return integrationError("github", `GitHub repos fetch failed (${res.status})`);
+      const repos = Array.isArray(res.body) ? res.body : [];
+      return integrationOk("github", {
+        count: repos.length,
+        repos: repos.map((r) => ({
+          name: r?.full_name,
+          private: r?.private,
+          default_branch: r?.default_branch,
+          updated_at: r?.updated_at,
+        })),
+      });
+    }
+  }
+
+  if (provider === "vercel") {
+    if (action === "recheck") return await integrationResult("vercel");
+    if (action === "list-projects") {
+      const missing = integrationMissing("vercel", ["VERCEL_TOKEN"]);
+      if (missing) return missing;
+      const limit = Math.min(Math.max(Number(params?.limit || 20), 1), 100);
+      const res = await fetchJson(`https://api.vercel.com/v9/projects?limit=${limit}`, {
+        headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` },
+      });
+      if (!res.ok) return integrationError("vercel", `Vercel projects fetch failed (${res.status})`);
+      const projects = Array.isArray(res.body?.projects) ? res.body.projects : [];
+      return integrationOk("vercel", {
+        count: projects.length,
+        projects: projects.map((p) => ({
+          id: p?.id,
+          name: p?.name,
+          framework: p?.framework,
+          updatedAt: p?.updatedAt,
+        })),
+      });
+    }
+  }
+
+  if (provider === "railway") {
+    if (action === "recheck") return await integrationResult("railway");
+    if (action === "list-projects") {
+      const missing = integrationMissing("railway", ["RAILWAY_TOKEN"]);
+      if (missing) return missing;
+      const res = await fetchJson("https://backboard.railway.com/graphql/v2", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.RAILWAY_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: "query { projects { edges { node { id name createdAt } } } }",
+        }),
+      });
+      if (!res.ok || res.body?.errors) {
+        return integrationError("railway", `Railway projects fetch failed (${res.status})`);
+      }
+      const edges = Array.isArray(res.body?.data?.projects?.edges) ? res.body.data.projects.edges : [];
+      return integrationOk("railway", {
+        count: edges.length,
+        projects: edges.map((e) => ({
+          id: e?.node?.id,
+          name: e?.node?.name,
+          createdAt: e?.node?.createdAt,
+        })),
+      });
+    }
+  }
+
+  return integrationError(provider, `Unsupported MCP action: ${provider}.${action}`);
+}
+
 async function collectOpsSummary() {
   const [integrationRows, billing, metaApiBalance] = await Promise.all([
     Promise.all(integrationIds.map(async (id) => [id, await integrationResult(id)])),
@@ -770,6 +910,30 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (req.method === "POST" && u.pathname === "/api/mcp/actions/run") {
+      const body = await readJsonBody(req);
+      const provider = String(body?.provider || "");
+      const action = String(body?.action || "");
+      if (!provider || !action) {
+        return json(res, 400, { ok: false, error: "provider and action are required" });
+      }
+      const secret = process.env.OSCC_ACTION_SECRET;
+      if (secret) {
+        const provided = String(body?.secret || "");
+        if (provided !== secret) {
+          return json(res, 403, { ok: false, error: "Invalid action secret" });
+        }
+      }
+      const result = await runMcpAction(provider, action, body?.params || {});
+      return json(res, 200, {
+        ok: true,
+        provider,
+        action,
+        result,
+        at: new Date().toISOString(),
+      });
+    }
+
     if (req.method !== "GET") return json(res, 405, { ok: false, error: "Method not allowed" });
 
     if (u.pathname === "/api/health") return json(res, 200, ok(req));
@@ -802,6 +966,15 @@ const server = http.createServer(async (req, res) => {
 
     if (u.pathname === "/api/alerts") {
       return json(res, 200, monitorPayload());
+    }
+
+    if (u.pathname === "/api/mcp/connections") {
+      return json(res, 200, {
+        ok: true,
+        now: new Date().toISOString(),
+        actionSecretRequired: Boolean(process.env.OSCC_ACTION_SECRET),
+        providers: mcpConnections(),
+      });
     }
 
     return json(res, 404, { ok: false, error: "Not found" });

@@ -95,3 +95,26 @@ export type AlertsFeed = {
   snapshot: OpsSummary | null;
 };
 
+export type McpProvider = {
+  id: string;
+  label: string;
+  configured: boolean;
+  requiredEnv: string[];
+  actions: string[];
+};
+
+export type McpConnectionsResponse = {
+  ok: boolean;
+  now: string;
+  actionSecretRequired: boolean;
+  providers: McpProvider[];
+};
+
+export type McpActionResponse = {
+  ok: boolean;
+  provider: string;
+  action: string;
+  at: string;
+  result: IntegrationApiResult;
+};
+
