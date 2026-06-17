@@ -11,7 +11,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["apple-touch-icon.png", "os-logo-square.png"],
+      includeAssets: [
+        "apple-touch-icon.png",
+        "os-logo-square.png",
+        "os-icon-192.png",
+        "os-icon-512.png",
+      ],
       manifest: {
         name: "OS Command Center",
         short_name: "OS Command",
@@ -23,17 +28,17 @@ export default defineConfig({
         scope: "./",
         icons: [
           {
-            src: "./os-icon-192.png",
+            src: "/os-icon-192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "./os-icon-512.png",
+            src: "/os-icon-512.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "./os-icon-512.png",
+            src: "/os-icon-512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
