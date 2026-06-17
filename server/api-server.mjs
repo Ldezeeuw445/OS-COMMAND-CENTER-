@@ -1,4 +1,5 @@
 import http from "node:http";
+import crypto from "node:crypto";
 import { URL } from "node:url";
 
 const PORT = Number(process.env.OSCC_API_PORT || 8787);
@@ -9,6 +10,11 @@ const ALERT_STRIPE_OUTFLOW_THRESHOLD = Number(process.env.OSCC_ALERT_STRIPE_OUTF
 const ALERT_METAAPI_MIN_BALANCE = Number(process.env.OSCC_ALERT_METAAPI_MIN_BALANCE || 0);
 const ALERT_NOTIFY_COOLDOWN_MS = Number(process.env.OSCC_NOTIFY_COOLDOWN_MS || 15 * 60 * 1000);
 const ALERT_NOTIFY_WARNINGS = process.env.OSCC_NOTIFY_WARNINGS === "1";
+const AUTH_COOKIE_NAME = "oscc_session";
+const AUTH_SESSION_TTL_MS = Number(process.env.OSCC_AUTH_SESSION_TTL_MS || 12 * 60 * 60 * 1000);
+const AUTH_TOTP_WINDOW_STEPS = Number(process.env.OSCC_AUTH_TOTP_WINDOW_STEPS || 1);
+const AUTH_OTP_STATIC = process.env.OSCC_LOGIN_OTP || "";
+const AUTH_TOTP_SECRET = process.env.OSCC_LOGIN_TOTP_SECRET || "";
 const integrationIds = [
   "supabase_admin",
   "stripe",
@@ -34,14 +40,18 @@ const monitorState = {
 const notificationState = {
   lastSentByKey: new Map(),
 };
+const authSessions = new Map();
 
-function json(res, status, body) {
+function json(req, res, status, body, extraHeaders = {}) {
+  const origin = req.headers.origin || "*";
   const payload = JSON.stringify(body);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "*",
+    "access-control-allow-origin": origin,
     "access-control-allow-methods": "GET,POST,OPTIONS",
     "access-control-allow-headers": "content-type",
+    vary: "origin",
+    ...extraHeaders,
   });
   res.end(payload);
 }
@@ -266,6 +276,115 @@ function readJsonBody(req) {
     });
     req.on("error", reject);
   });
+}
+
+function parseCookies(req) {
+  const raw = req.headers.cookie || "";
+  const out = {};
+  for (const part of raw.split(";")) {
+    const [k, ...rest] = part.trim().split("=");
+    if (!k) continue;
+    out[k] = decodeURIComponent(rest.join("="));
+  }
+  return out;
+}
+
+function cleanupExpiredSessions() {
+  const now = Date.now();
+  for (const [token, session] of authSessions.entries()) {
+    if (!session?.expiresAt || session.expiresAt <= now) {
+      authSessions.delete(token);
+    }
+  }
+}
+
+function getSessionFromRequest(req) {
+  cleanupExpiredSessions();
+  const cookies = parseCookies(req);
+  const token = cookies[AUTH_COOKIE_NAME];
+  if (!token) return null;
+  const session = authSessions.get(token);
+  if (!session) return null;
+  if (session.expiresAt <= Date.now()) {
+    authSessions.delete(token);
+    return null;
+  }
+  return { token, ...session };
+}
+
+function makeSessionCookie(token, maxAgeMs) {
+  const maxAge = Math.max(0, Math.floor(maxAgeMs / 1000));
+  return `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+}
+
+function clearSessionCookie() {
+  return `${AUTH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+}
+
+function normalizeOtp(raw) {
+  return String(raw || "").replace(/\D/g, "").slice(0, 8);
+}
+
+function decodeBase32Secret(secret) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const clean = String(secret || "")
+    .toUpperCase()
+    .replace(/=+$/g, "")
+    .replace(/[^A-Z2-7]/g, "");
+  if (!clean) return Buffer.alloc(0);
+  let bits = "";
+  for (const char of clean) {
+    const idx = alphabet.indexOf(char);
+    if (idx < 0) continue;
+    bits += idx.toString(2).padStart(5, "0");
+  }
+  const bytes = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) {
+    bytes.push(Number.parseInt(bits.slice(i, i + 8), 2));
+  }
+  return Buffer.from(bytes);
+}
+
+function totpCodeForStep(secretBuffer, step) {
+  const stepBuffer = Buffer.alloc(8);
+  stepBuffer.writeBigUInt64BE(BigInt(step), 0);
+  const hmac = crypto.createHmac("sha1", secretBuffer).update(stepBuffer).digest();
+  const offset = hmac[hmac.length - 1] & 0xf;
+  const binary =
+    ((hmac[offset] & 0x7f) << 24) |
+    ((hmac[offset + 1] & 0xff) << 16) |
+    ((hmac[offset + 2] & 0xff) << 8) |
+    (hmac[offset + 3] & 0xff);
+  return String(binary % 1_000_000).padStart(6, "0");
+}
+
+function secureEquals(a, b) {
+  const aBuf = Buffer.from(String(a || ""));
+  const bBuf = Buffer.from(String(b || ""));
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
+function verifyOtp(rawOtp) {
+  const otp = normalizeOtp(rawOtp);
+  if (!otp) return false;
+
+  if (AUTH_OTP_STATIC) {
+    const normalizedStatic = normalizeOtp(AUTH_OTP_STATIC);
+    if (normalizedStatic && secureEquals(otp, normalizedStatic)) {
+      return true;
+    }
+  }
+
+  if (!AUTH_TOTP_SECRET) return false;
+  const secretBuffer = decodeBase32Secret(AUTH_TOTP_SECRET);
+  if (!secretBuffer.length) return false;
+  const currentStep = Math.floor(Date.now() / 30000);
+  for (let offset = -AUTH_TOTP_WINDOW_STEPS; offset <= AUTH_TOTP_WINDOW_STEPS; offset += 1) {
+    const expected = totpCodeForStep(secretBuffer, currentStep + offset);
+    if (secureEquals(otp, expected)) return true;
+  }
+  return false;
 }
 
 async function checkCloudflare() {
@@ -850,34 +969,81 @@ function monitorPayload() {
 
 const server = http.createServer(async (req, res) => {
   try {
-    if (!req.url) return json(res, 400, { ok: false, error: "Missing URL" });
+    if (!req.url) return json(req, res, 400, { ok: false, error: "Missing URL" });
     const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
-    if (req.method === "OPTIONS") return json(res, 204, {});
+    if (req.method === "OPTIONS") return json(req, res, 204, {});
+
+    if (req.method === "GET" && u.pathname === "/api/auth/session") {
+      const session = getSessionFromRequest(req);
+      return json(req, res, 200, {
+        ok: true,
+        authenticated: Boolean(session),
+        expiresAt: session?.expiresAt ?? null,
+      });
+    }
+
+    if (req.method === "POST" && u.pathname === "/api/auth/login") {
+      const body = await readJsonBody(req);
+      if (!AUTH_OTP_STATIC && !AUTH_TOTP_SECRET) {
+        return json(req, res, 500, { ok: false, error: "Login OTP is not configured on server." });
+      }
+      const otp = body?.otp;
+      if (!verifyOtp(otp)) {
+        return json(req, res, 401, { ok: false, error: "Invalid OTP code." });
+      }
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = Date.now() + AUTH_SESSION_TTL_MS;
+      authSessions.set(token, {
+        createdAt: Date.now(),
+        expiresAt,
+      });
+      return json(
+        req,
+        res,
+        200,
+        { ok: true, authenticated: true, expiresAt },
+        { "set-cookie": makeSessionCookie(token, AUTH_SESSION_TTL_MS) },
+      );
+    }
+
+    if (req.method === "POST" && u.pathname === "/api/auth/logout") {
+      const session = getSessionFromRequest(req);
+      if (session?.token) authSessions.delete(session.token);
+      return json(req, res, 200, { ok: true, authenticated: false }, { "set-cookie": clearSessionCookie() });
+    }
+
+    if (u.pathname.startsWith("/api/") && u.pathname !== "/api/health" && !u.pathname.startsWith("/api/auth/")) {
+      const session = getSessionFromRequest(req);
+      if (!session) {
+        return json(req, res, 401, { ok: false, error: "Authentication required." });
+      }
+    }
+
     if (req.method === "POST" && u.pathname === "/api/assistant/chat") {
       const body = await readJsonBody(req);
       if (!body?.message || String(body.message).trim().length === 0) {
-        return json(res, 400, { ok: false, error: "message is required" });
+        return json(req, res, 400, { ok: false, error: "message is required" });
       }
-      return json(res, 200, await runAssistant(body.message));
+      return json(req, res, 200, await runAssistant(body.message));
     }
     if (req.method === "POST" && u.pathname === "/api/monitor/run") {
-      return json(res, 200, await runMonitor("manual"));
+      return json(req, res, 200, await runMonitor("manual"));
     }
     if (req.method === "POST" && u.pathname === "/api/actions/monitor/run") {
       const body = await readJsonBody(req);
       const reason = String(body?.reason || "manual_action").slice(0, 120);
-      return json(res, 200, await runMonitor(reason));
+      return json(req, res, 200, await runMonitor(reason));
     }
     if (req.method === "POST" && u.pathname === "/api/actions/integrations/recheck") {
       const body = await readJsonBody(req);
       const id = String(body?.id || "");
       if (!integrationIds.includes(id)) {
-        return json(res, 400, { ok: false, error: `Unknown integration id: ${id}` });
+        return json(req, res, 400, { ok: false, error: `Unknown integration id: ${id}` });
       }
       const result = await integrationResult(id);
       updateSnapshotIntegration(id, result);
-      return json(res, 200, { ok: true, id, result, at: new Date().toISOString() });
+      return json(req, res, 200, { ok: true, id, result, at: new Date().toISOString() });
     }
     if (req.method === "POST" && u.pathname === "/api/actions/notifications/test") {
       const body = await readJsonBody(req);
@@ -890,7 +1056,7 @@ const server = http.createServer(async (req, res) => {
         details: { source: "manual_action_test" },
       });
       const result = await sendAlertNotifications(testAlert, monitorState.snapshot);
-      return json(res, 200, { ok: true, alert: testAlert, notification: result });
+      return json(req, res, 200, { ok: true, alert: testAlert, notification: result });
     }
     if (req.method === "POST" && u.pathname === "/api/notifications/test") {
       const body = await readJsonBody(req);
@@ -903,7 +1069,7 @@ const server = http.createServer(async (req, res) => {
         details: { source: "manual_test" },
       });
       const result = await sendAlertNotifications(testAlert, monitorState.snapshot);
-      return json(res, 200, {
+      return json(req, res, 200, {
         ok: true,
         alert: testAlert,
         notification: result,
@@ -915,17 +1081,17 @@ const server = http.createServer(async (req, res) => {
       const provider = String(body?.provider || "");
       const action = String(body?.action || "");
       if (!provider || !action) {
-        return json(res, 400, { ok: false, error: "provider and action are required" });
+        return json(req, res, 400, { ok: false, error: "provider and action are required" });
       }
       const secret = process.env.OSCC_ACTION_SECRET;
       if (secret) {
         const provided = String(body?.secret || "");
         if (provided !== secret) {
-          return json(res, 403, { ok: false, error: "Invalid action secret" });
+          return json(req, res, 403, { ok: false, error: "Invalid action secret" });
         }
       }
       const result = await runMcpAction(provider, action, body?.params || {});
-      return json(res, 200, {
+      return json(req, res, 200, {
         ok: true,
         provider,
         action,
@@ -934,13 +1100,13 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    if (req.method !== "GET") return json(res, 405, { ok: false, error: "Method not allowed" });
+    if (req.method !== "GET") return json(req, res, 405, { ok: false, error: "Method not allowed" });
 
-    if (u.pathname === "/api/health") return json(res, 200, ok(req));
+    if (u.pathname === "/api/health") return json(req, res, 200, ok(req));
 
     if (u.pathname === "/api/integrations") {
       const results = await Promise.all(integrationIds.map(async (id) => [id, await integrationResult(id)]));
-      return json(res, 200, {
+      return json(req, res, 200, {
         ok: true,
         results: Object.fromEntries(results),
       });
@@ -949,27 +1115,27 @@ const server = http.createServer(async (req, res) => {
     const match = u.pathname.match(/^\/api\/integrations\/([a-z_]+)$/);
     if (match) {
       const id = match[1];
-      return json(res, 200, await integrationResult(id));
+      return json(req, res, 200, await integrationResult(id));
     }
 
     if (u.pathname === "/api/billing/summary") {
-      return json(res, 200, await getStripeBillingSummary());
+      return json(req, res, 200, await getStripeBillingSummary());
     }
 
     if (u.pathname === "/api/metaapi/balance") {
-      return json(res, 200, await getMetaApiBalance());
+      return json(req, res, 200, await getMetaApiBalance());
     }
 
     if (u.pathname === "/api/ops/summary") {
-      return json(res, 200, await collectOpsSummary());
+      return json(req, res, 200, await collectOpsSummary());
     }
 
     if (u.pathname === "/api/alerts") {
-      return json(res, 200, monitorPayload());
+      return json(req, res, 200, monitorPayload());
     }
 
     if (u.pathname === "/api/mcp/connections") {
-      return json(res, 200, {
+      return json(req, res, 200, {
         ok: true,
         now: new Date().toISOString(),
         actionSecretRequired: Boolean(process.env.OSCC_ACTION_SECRET),
@@ -977,9 +1143,9 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    return json(res, 404, { ok: false, error: "Not found" });
+    return json(req, res, 404, { ok: false, error: "Not found" });
   } catch (err) {
-    return json(res, 500, { ok: false, error: String(err?.message || err) });
+    return json(req, res, 500, { ok: false, error: String(err?.message || err) });
   }
 });
 

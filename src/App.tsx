@@ -1,6 +1,7 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import { DataModeProvider } from "./lib/dataMode";
+import { AuthProvider, useAuth } from "./lib/auth";
 import Overview from "./pages/Overview";
 import Products from "./pages/Products";
 import AgentOffices from "./pages/AgentOffices";
@@ -12,8 +13,23 @@ import Users from "./pages/Users";
 import Releases from "./pages/Releases";
 import McpHub from "./pages/McpHub";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
 
-export default function App() {
+function GuardedApp() {
+  const auth = useAuth();
+
+  if (auth.loading) {
+    return (
+      <div className="min-h-[100dvh] w-full bg-[#0b101a] flex items-center justify-center text-sm text-white/55">
+        Checking secure session...
+      </div>
+    );
+  }
+
+  if (!auth.authenticated) {
+    return <Login />;
+  }
+
   return (
     <DataModeProvider>
       <HashRouter>
@@ -34,6 +50,14 @@ export default function App() {
         </Routes>
       </HashRouter>
     </DataModeProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <GuardedApp />
+    </AuthProvider>
   );
 }
 

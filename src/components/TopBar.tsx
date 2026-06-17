@@ -1,5 +1,6 @@
-import { Search, Bell, PanelLeft } from "lucide-react";
+import { Search, Bell, PanelLeft, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/lib/auth";
 
 const pageNames: Record<string, string> = {
   "/": "Overview",
@@ -22,6 +23,7 @@ type TopBarProps = {
 export default function TopBar({ onOpenSidebar }: TopBarProps) {
   const location = useLocation();
   const pageName = pageNames[location.pathname] || "OS Command Center";
+  const auth = useAuth();
 
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-[#0f1420] border-b border-white/[0.06] flex-shrink-0 shadow-[inset_0_-1px_0_rgba(255,255,255,0.03)]">
@@ -52,6 +54,15 @@ export default function TopBar({ onOpenSidebar }: TopBarProps) {
         <button className="relative p-1.5 rounded-md hover:bg-white/[0.04] transition-colors">
           <Bell size={14} className="text-white/30" />
           <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500" />
+        </button>
+        <button
+          type="button"
+          onClick={() => void auth.logout()}
+          className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[10px] text-white/60 hover:bg-white/[0.06]"
+          title="Log out"
+        >
+          <LogOut size={11} />
+          <span className="hidden sm:inline">Logout</span>
         </button>
         <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-white/[0.04] border border-white/[0.08]">
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
