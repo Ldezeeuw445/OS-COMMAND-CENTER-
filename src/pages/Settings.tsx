@@ -3,6 +3,12 @@ import { useState } from "react";
 import { useOpsActions } from "../lib/hooks/useOpsActions";
 import { useOpsSummary } from "../lib/hooks/useOpsSummary";
 import { useAlertsFeed } from "../lib/hooks/useAlertsFeed";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 const integrationIds = [
   "supabase_admin",
@@ -22,6 +28,8 @@ export default function Settings() {
   const [reason, setReason] = useState("manual_action");
   const [notifMessage, setNotifMessage] = useState("Manual test notification from OS Command Center.");
   const [notifSeverity, setNotifSeverity] = useState<"critical" | "warning">("critical");
+  const [otpValue, setOtpValue] = useState("");
+  const [otpUnlockUntil, setOtpUnlockUntil] = useState<number | null>(null);
 
   const actions = useOpsActions();
   const { summary } = useOpsSummary();
@@ -30,6 +38,15 @@ export default function Settings() {
   const monitor = feed?.monitor;
   const notifications = feed?.notifications;
   const integrations = summary?.integrations ?? feed?.snapshot?.integrations ?? {};
+  const otpUnlocked = otpUnlockUntil != null && otpUnlockUntil > Date.now();
+  const actionLocked = !otpUnlocked;
+
+  function unlockActions() {
+    if (otpValue.length < 6) return;
+    // Local OTP gate: requires a 6-digit entry before manual ops actions.
+    setOtpUnlockUntil(Date.now() + 10 * 60 * 1000);
+    setOtpValue("");
+  }
 
   return (
     <div className="h-full overflow-y-auto scrollbar-hide p-4 space-y-4">
@@ -45,6 +62,48 @@ export default function Settings() {
           </span>
         </div>
       )}
+
+      <div className="panel" data-status={otpUnlocked ? "LIVE" : "PENDING"}>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="text-xs font-semibold text-white/75">Action OTP</h3>
+          <span className={`text-[10px] ${otpUnlocked ? "text-emerald-300" : "text-amber-300"}`}>
+            {otpUnlocked ? "Unlocked (10m)" : "Locked"}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <InputOTP maxLength={6} value={otpValue} onChange={setOtpValue}>
+            <InputOTPGroup>
+              <InputOTPSlot index={0} />
+              <InputOTPSlot index={1} />
+              <InputOTPSlot index={2} />
+            </InputOTPGroup>
+            <InputOTPSeparator />
+            <InputOTPGroup>
+              <InputOTPSlot index={3} />
+              <InputOTPSlot index={4} />
+              <InputOTPSlot index={5} />
+            </InputOTPGroup>
+          </InputOTP>
+          <button
+            onClick={unlockActions}
+            disabled={otpValue.length < 6}
+            className="rounded-md border border-cyan-500/25 bg-cyan-500/10 px-3 py-1.5 text-[11px] text-cyan-300 disabled:opacity-50"
+          >
+            Unlock Actions
+          </button>
+          {otpUnlocked ? (
+            <button
+              onClick={() => setOtpUnlockUntil(null)}
+              className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/65"
+            >
+              Lock now
+            </button>
+          ) : null}
+        </div>
+        <p className="text-[10px] text-white/35 mt-2">
+          Manual monitor/recheck/notification actions are OTP-gated to prevent accidental execution.
+        </p>
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="panel" data-status="LIVE">
@@ -78,7 +137,7 @@ export default function Settings() {
             />
             <button
               onClick={() => void actions.runMonitor(reason.trim() || "manual_action")}
-              disabled={actions.loading}
+              disabled={actions.loading || actionLocked}
               className="rounded-md border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[11px] text-cyan-300 disabled:opacity-50"
             >
               Run
@@ -105,7 +164,7 @@ export default function Settings() {
             </select>
             <button
               onClick={() => void actions.recheckIntegration(selectedId)}
-              disabled={actions.loading}
+              disabled={actions.loading || actionLocked}
               className="rounded-md border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[11px] text-cyan-300 disabled:opacity-50"
             >
               Recheck
@@ -136,7 +195,7 @@ export default function Settings() {
           />
           <button
             onClick={() => void actions.testNotification(notifSeverity, notifMessage.trim() || "Manual test notification")}
-            disabled={actions.loading}
+            disabled={actions.loading || actionLocked}
             className="col-span-2 rounded-md border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[11px] text-cyan-300 disabled:opacity-50"
           >
             Send

@@ -47,10 +47,10 @@ const navSections = [
 
 export default function Sidebar() {
   return (
-    <div className="w-[210px] bg-[#0d0d0d] border-r border-white/[0.04] flex flex-col flex-shrink-0">
-      <div className="px-3 py-3 border-b border-white/[0.04]">
+    <aside className="w-[210px] h-full min-h-0 self-stretch bg-[#12151b] border-r border-white/[0.08] flex flex-col flex-shrink-0 shadow-[inset_-1px_0_0_rgba(255,255,255,0.035)]">
+      <div className="px-3 py-3 border-b border-white/[0.08]">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
+          <div className="w-7 h-7 rounded bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/20 flex items-center justify-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
             <Zap size={14} className="text-[#06b6d4]" />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 p-2 space-y-3 overflow-y-auto scrollbar-hide">
+      <nav className="flex-1 p-2.5 space-y-3 overflow-y-auto scrollbar-hide">
         {navSections.map((section) => (
           <div key={section.title}>
             <div className="px-2.5 mb-1 text-[8px] text-white/20 uppercase tracking-widest font-semibold">
@@ -77,8 +77,8 @@ export default function Sidebar() {
                     className={({ isActive }) =>
                       `flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[11px] transition-all ${
                         isActive
-                          ? "border border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
-                          : "text-white/35 hover:text-white/60 hover:bg-white/[0.02]"
+                          ? "border border-white/25 bg-white/[0.09] text-cyan-300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                          : "text-white/45 hover:text-white/75 hover:bg-white/[0.05]"
                       }`
                     }
                   >
@@ -92,7 +92,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-2 border-t border-white/[0.04]">
+      <div className="p-2 border-t border-white/[0.08]">
         <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.02] cursor-pointer transition-colors">
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
             <span className="text-[8px] font-bold text-cyan-400">A</span>
@@ -108,7 +108,7 @@ export default function Sidebar() {
           <span className="text-[9px] text-white/30">All systems operational</span>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
 
