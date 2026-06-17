@@ -3,12 +3,32 @@ import {
   TrendingUp, CreditCard, Library, Activity, Settings
 } from 'lucide-react';
 import { useDataMode } from '../src/lib/dataMode';
+import { useAssistantChat } from '../src/lib/hooks/useAssistantChat';
 
 const agents = [
+  {
+    name: 'OS Command Core AI',
+    desc: 'One central AI for global ops triage and routing',
+    badge: 'GLOBAL CORE',
+    lane: 'Core Ops',
+    model: 'GPT-4o-mini',
+    provider: 'OpenAI',
+    prompt: 'v1.0.0',
+    today: '2.420',
+    success: '99.6%',
+    successColor: 'green',
+    latency: '72ms',
+    cost: '$4.10',
+    tools: 9,
+    lastRun: '14:36',
+    status: 'Active',
+    statusColor: 'green',
+  },
   {
     name: 'Trade Reviewer',
     desc: 'Pattern detection in trade history',
     badge: 'BOTH',
+    lane: 'Trading / Risk',
     model: 'GPT-4o',
     provider: 'OpenAI',
     prompt: 'v2.4.1',
@@ -26,6 +46,7 @@ const agents = [
     name: 'Journal Coach',
     desc: 'Guided trade journaling',
     badge: 'AXE COMPANION',
+    lane: 'Trading / Risk',
     model: 'GPT-4o',
     provider: 'OpenAI',
     prompt: 'v1.8.3',
@@ -43,6 +64,7 @@ const agents = [
     name: 'Market Context Agent',
     desc: 'Real-time market context delivery',
     badge: 'BOTH',
+    lane: 'Trading / Risk',
     model: 'Claude 3.5',
     provider: 'Anthropic',
     prompt: 'v3.1.0',
@@ -60,6 +82,7 @@ const agents = [
     name: 'Risk Guardian',
     desc: 'Risk monitoring and alerting',
     badge: 'TRADING OS',
+    lane: 'Trading / Risk',
     model: 'GPT-4o',
     provider: 'OpenAI',
     prompt: 'v2.0.2',
@@ -77,6 +100,7 @@ const agents = [
     name: 'Terminal Copilot',
     desc: 'In-terminal AI assistance',
     badge: 'TRADING OS',
+    lane: 'Automation / Ops',
     model: 'GPT-4o',
     provider: 'OpenAI',
     prompt: 'v4.2.0',
@@ -94,6 +118,7 @@ const agents = [
     name: 'Support Agent',
     desc: 'User support automation',
     badge: 'BOTH',
+    lane: 'Website / Support',
     model: 'GPT-4o-mini',
     provider: 'OpenAI',
     prompt: 'v1.3.5',
@@ -113,6 +138,7 @@ const agents = [
     name: 'Growth Assistant',
     desc: 'Growth analysis and recommendations',
     badge: 'ADMIN',
+    lane: 'Growth / Marketing',
     model: 'GPT-4o',
     provider: 'OpenAI',
     prompt: 'v1.1.0',
@@ -130,6 +156,7 @@ const agents = [
     name: 'Billing Assistant',
     desc: 'Billing and subscription support',
     badge: 'BOTH',
+    lane: 'Website / Support',
     model: 'GPT-4o-mini',
     provider: 'OpenAI',
     prompt: 'v1.0.4',
@@ -147,6 +174,7 @@ const agents = [
     name: 'Knowledge Curator',
     desc: 'Knowledge base management',
     badge: 'BOTH',
+    lane: 'Automation / Ops',
     model: 'Claude 3.5',
     provider: 'Anthropic',
     prompt: 'v2.5.1',
@@ -163,6 +191,7 @@ const agents = [
 ];
 
 const iconMap: Record<string, React.ReactNode> = {
+  'OS Command Core AI': <Terminal size={16} className="text-cyan-400" />,
   'Trade Reviewer': <BarChart2 size={16} className="text-cyan-400" />,
   'Journal Coach': <BookOpen size={16} className="text-cyan-400" />,
   'Market Context Agent': <Globe size={16} className="text-cyan-400" />,
@@ -177,9 +206,65 @@ const iconMap: Record<string, React.ReactNode> = {
 export default function AgentOffices() {
   const { mode } = useDataMode();
   const panelStatus = mode === 'live' ? 'PENDING' : mode === 'hybrid' ? 'DEMO' : 'DEMO';
+  const assistant = useAssistantChat();
+  const lanes = ['Core Ops', 'Website / Support', 'Trading / Risk', 'Automation / Ops', 'Growth / Marketing'];
+  const laneColors: Record<string, string> = {
+    'Core Ops': 'text-cyan-300',
+    'Website / Support': 'text-green-300',
+    'Trading / Risk': 'text-amber-300',
+    'Automation / Ops': 'text-purple-300',
+    'Growth / Marketing': 'text-pink-300',
+  };
 
   return (
     <div className="h-full overflow-y-auto scrollbar-hide p-4 space-y-4">
+      <div className="panel" data-status="LIVE">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold text-white/70">AI Assistant (Ops)</h3>
+          <span className="text-[9px] text-white/35">
+            Default model: <span className="font-mono text-white/50">gpt-4o-mini</span>
+          </span>
+        </div>
+        <p className="mt-1 text-[10px] text-white/35">
+          Ask for incident response, cost optimization, or health-check triage steps.
+        </p>
+        <form
+          className="mt-2 flex flex-col gap-2 md:flex-row"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget as HTMLFormElement;
+            const input = form.elements.namedItem('assistantMessage') as HTMLInputElement | null;
+            const message = input?.value?.trim() || '';
+            if (!message) return;
+            await assistant.ask(message);
+          }}
+        >
+          <input
+            name="assistantMessage"
+            type="text"
+            placeholder="e.g. Why is Cloudflare showing error and what should I fix first?"
+            className="flex-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[11px] text-white/70 placeholder:text-white/25 outline-none"
+          />
+          <button
+            type="submit"
+            disabled={assistant.loading}
+            className="rounded-md border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-[11px] text-cyan-300 disabled:opacity-50"
+          >
+            {assistant.loading ? 'Thinking…' : 'Ask Assistant'}
+          </button>
+        </form>
+        {assistant.error ? (
+          <p className="mt-2 text-[10px] text-red-300">{assistant.error}</p>
+        ) : null}
+        {assistant.reply ? (
+          <div className="mt-2 rounded border border-white/[0.06] bg-white/[0.02] p-2">
+            <p className="text-[9px] text-white/35">
+              Reply via <span className="font-mono text-white/50">{assistant.model || 'unknown'}</span>
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-[10px] text-white/70">{assistant.reply}</p>
+          </div>
+        ) : null}
+      </div>
       {(mode === 'live' || mode === 'hybrid') && (
         <div className="px-3 py-2 rounded-md bg-white/[0.02] border border-white/[0.04]">
           <span className="text-[11px] text-white/50">
@@ -231,93 +316,104 @@ export default function AgentOffices() {
         </span>
       </div>
 
-      {/* Agent Cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {agents.map((agent) => (
-          <div key={agent.name} className="panel" data-status={panelStatus}>
-            {/* Header */}
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-md bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                  {iconMap[agent.name]}
-                </div>
-                <div>
-                  <h4 className="text-[12px] font-semibold text-white/80">{agent.name}</h4>
-                  <p className="text-[9px] text-white/30">{agent.desc}</p>
-                </div>
-              </div>
-              <span className="text-[8px] px-2 py-0.5 rounded-full bg-white/[0.04] text-white/30 border border-white/[0.06]">
-                {agent.badge}
-              </span>
-            </div>
+      {/* Agent Cards by lane */}
+      {lanes.map((lane) => {
+        const laneAgents = agents.filter((a) => a.lane === lane);
+        if (laneAgents.length === 0) return null;
+        return (
+          <div key={lane} className="space-y-2">
+            <h3 className={`text-[10px] uppercase tracking-wider ${laneColors[lane] || 'text-white/45'}`}>
+              {lane}
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              {laneAgents.map((agent) => (
+                <div key={agent.name} className="panel" data-status={panelStatus}>
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-md bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                        {iconMap[agent.name]}
+                      </div>
+                      <div>
+                        <h4 className="text-[12px] font-semibold text-white/80">{agent.name}</h4>
+                        <p className="text-[9px] text-white/30">{agent.desc}</p>
+                      </div>
+                    </div>
+                    <span className="text-[8px] px-2 py-0.5 rounded-full bg-white/[0.04] text-white/30 border border-white/[0.06]">
+                      {agent.badge}
+                    </span>
+                  </div>
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-3 gap-2 py-2 border-t border-white/[0.04]">
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Model</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.model}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Provider</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.provider}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Prompt</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.prompt}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Today</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.today}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Success</div>
-                <div className={`text-[10px] mt-0.5 ${agent.successColor === 'green' ? 'text-green-400' : 'text-amber-400'}`}>{agent.success}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Latency</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.latency}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Cost</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.cost}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Tools</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.tools}</div>
-              </div>
-              <div>
-                <div className="text-[8px] text-white/25 uppercase tracking-wider">Last Run</div>
-                <div className="text-[10px] text-white/60 mt-0.5">{agent.lastRun}</div>
-              </div>
-            </div>
+                  {/* Stats grid */}
+                  <div className="grid grid-cols-3 gap-2 py-2 border-t border-white/[0.04]">
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Model</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.model}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Provider</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.provider}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Prompt</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.prompt}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Today</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.today}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Success</div>
+                      <div className={`text-[10px] mt-0.5 ${agent.successColor === 'green' ? 'text-green-400' : 'text-amber-400'}`}>{agent.success}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Latency</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.latency}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Cost</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.cost}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Tools</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.tools}</div>
+                    </div>
+                    <div>
+                      <div className="text-[8px] text-white/25 uppercase tracking-wider">Last Run</div>
+                      <div className="text-[10px] text-white/60 mt-0.5">{agent.lastRun}</div>
+                    </div>
+                  </div>
 
-            {/* Warning */}
-            {'warning' in agent && (
-              <div className="mt-2 p-2 rounded bg-red-500/5 border border-red-500/10">
-                <div className="flex items-center gap-1.5">
-                  <Activity size={10} className="text-red-400" />
-                  <span className="text-[10px] text-red-400">{agent.warning}</span>
+                  {/* Warning */}
+                  {'warning' in agent && (
+                    <div className="mt-2 p-2 rounded bg-red-500/5 border border-red-500/10">
+                      <div className="flex items-center gap-1.5">
+                        <Activity size={10} className="text-red-400" />
+                        <span className="text-[10px] text-red-400">{agent.warning}</span>
+                      </div>
+                      <p className="text-[8px] text-red-400/60 mt-0.5">{agent.warningDesc}</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.04]">
+                    <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded ${
+                      agent.statusColor === 'green'
+                        ? 'bg-green-500/10 text-green-400'
+                        : 'bg-amber-500/10 text-amber-400'
+                    }`}>
+                      <Activity size={10} /> {agent.status}
+                    </span>
+                    <button className="flex items-center gap-1 text-[9px] text-white/30 hover:text-white/50 px-2 py-0.5 rounded hover:bg-white/[0.03] transition-colors">
+                      <Settings size={10} /> Open Office
+                    </button>
+                  </div>
                 </div>
-                <p className="text-[8px] text-red-400/60 mt-0.5">{agent.warningDesc}</p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.04]">
-              <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded ${
-                agent.statusColor === 'green'
-                  ? 'bg-green-500/10 text-green-400'
-                  : 'bg-amber-500/10 text-amber-400'
-              }`}>
-                <Activity size={10} /> {agent.status}
-              </span>
-              <button className="flex items-center gap-1 text-[9px] text-white/30 hover:text-white/50 px-2 py-0.5 rounded hover:bg-white/[0.03] transition-colors">
-                <Settings size={10} /> Open Office
-              </button>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

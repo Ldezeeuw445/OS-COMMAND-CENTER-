@@ -26,20 +26,9 @@ const auditLogs = [
   { action: 'Release Deployed', details: 'v2.4.1 → production environment', admin: 'github-actions', ip: '10.0.0.2', time: '2024-01-15 14:00:00' },
 ];
 
-const secretEnvKeys = [
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'AXE_CORE_LOGS_TOKEN',
-  'AXE_COMPANION_API_TOKEN',
-  'STRIPE_SECRET_KEY',
-  'GITHUB_TOKEN',
-  'VERCEL_TOKEN',
-  'CLOUDFLARE_API_TOKEN',
-  'METAAPI_TOKEN',
-];
-
 export default function SettingsPage() {
   const { mode, setMode } = useDataMode();
-  const panelStatus = mode === 'live' ? 'LIVE' : 'PENDING';
+  const panelStatus = mode === 'live' ? 'MISSING_CONFIG' : mode === 'hybrid' ? 'DEMO' : 'DEMO';
   const integrationApi = useIntegrationStatuses(mode);
   const [activeTab, setActiveTab] = useState('flags');
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -83,7 +72,7 @@ export default function SettingsPage() {
           <div>
             <h3 className="text-xs font-semibold text-white/70">Global Data Mode</h3>
             <p className="text-[9px] text-white/30 mt-0.5">
-              Command Center runs in real-only mode. No demo/mock operational data is shown.
+              Live mode will never show demo metrics. Missing integrations become pending/missing_config.
             </p>
           </div>
           <select
@@ -91,6 +80,8 @@ export default function SettingsPage() {
             onChange={(e) => setMode(e.target.value as any)}
             className="bg-white/[0.03] border border-white/[0.08] rounded-md px-3 py-1.5 text-[11px] text-white/60 outline-none"
           >
+            <option value="demo">demo</option>
+            <option value="hybrid">hybrid</option>
             <option value="live">live</option>
           </select>
         </div>
@@ -166,37 +157,6 @@ export default function SettingsPage() {
             )}
           </div>
         )}
-      </div>
-
-      <div className="panel" data-status={panelStatus}>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded bg-white/[0.02] border border-white/[0.04] p-3">
-            <h3 className="text-xs font-semibold text-white/70">Install As App</h3>
-            <p className="mt-1 text-[10px] text-white/35">
-              Open this dashboard in Safari/Chrome and use Add to Home Screen. PWA manifest + app icon are enabled.
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <img src="./axe-icon-192.png" alt="AXE Command Center logo" className="h-8 w-8 rounded" />
-              <div className="text-[10px] text-white/45">
-                App name: <span className="text-white/65">AXE Command Center</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded bg-white/[0.02] border border-white/[0.04] p-3">
-            <h3 className="text-xs font-semibold text-white/70">Secrets Safety</h3>
-            <p className="mt-1 text-[10px] text-white/35">
-              Keep all tokens server-side only. Never expose secrets in browser env variables.
-            </p>
-            <div className="mt-2 grid grid-cols-2 gap-1">
-              {secretEnvKeys.map((key) => (
-                <span key={key} className="rounded border border-white/[0.06] bg-white/[0.03] px-1.5 py-1 text-[9px] font-mono text-white/50">
-                  {key}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Tabs */}

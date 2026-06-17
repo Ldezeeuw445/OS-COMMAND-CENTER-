@@ -11,11 +11,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["apple-touch-icon.png", "axe-logo-square.png"],
+      includeAssets: ["apple-touch-icon.png", "os-logo-square.png"],
       manifest: {
-        name: "AXE Command Center",
-        short_name: "AXE CC",
-        description: "AXE ecosystem command center",
+        name: "OS Command Center",
+        short_name: "OS Command",
+        description: "Operational command center for AXE ecosystem runtime health.",
         theme_color: "#0a0a0a",
         background_color: "#0a0a0a",
         display: "standalone",
@@ -23,17 +23,17 @@ export default defineConfig({
         scope: "./",
         icons: [
           {
-            src: "./axe-icon-192.png",
+            src: "./os-icon-192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "./axe-icon-512.png",
+            src: "./os-icon-512.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "./axe-icon-512.png",
+            src: "./os-icon-512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",

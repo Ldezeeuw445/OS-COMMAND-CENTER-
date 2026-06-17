@@ -6,8 +6,10 @@ export type IntegrationId =
   | "stripe"
   | "cloudflare"
   | "metaapi"
+  | "openai"
   | "vercel"
   | "github"
+  | "railway"
   | "axe_companion"
   | "axe_core";
 
@@ -28,8 +30,10 @@ export const integrations: IntegrationInfo[] = [
   { id: "stripe", label: "Stripe", scope: "Finance", notes: "MRR/subscriptions via server-side Stripe API + webhooks." },
   { id: "cloudflare", label: "Cloudflare (Workers/DO/WS)", scope: "Server Room", notes: "Worker/DO health + WS tick age." },
   { id: "metaapi", label: "MetaApi / MT5", scope: "Server Room", notes: "Sync health, connection mode, errors." },
+  { id: "openai", label: "OpenAI", scope: "Agent Offices", notes: "API key validity + usage/cost checks when available." },
   { id: "vercel", label: "Vercel", scope: "Releases", notes: "Deployments, build status, logs links." },
   { id: "github", label: "GitHub", scope: "Releases", notes: "Commits, releases, checks." },
+  { id: "railway", label: "Railway", scope: "Server Room", notes: "Service health and deployment visibility." },
   {
     id: "axe_companion",
     label: "AXE Companion Runtime",

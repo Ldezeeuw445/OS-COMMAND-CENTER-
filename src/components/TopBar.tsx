@@ -1,7 +1,5 @@
-import { Bell, Search } from "lucide-react";
+import { Search, Bell } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { useDataMode } from "../lib/dataMode";
-import { DataModePill } from "./DataStatusPill";
 
 const pageNames: Record<string, string> = {
   "/": "Overview",
@@ -18,34 +16,34 @@ const pageNames: Record<string, string> = {
 
 export default function TopBar() {
   const location = useLocation();
-  const pageName = pageNames[location.pathname] || "AXE Command Center";
-  const { mode } = useDataMode();
+  const pageName = pageNames[location.pathname] || "OS Command Center";
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between border-b border-white/[0.04] bg-[#0d0d0d] px-4 py-2">
+    <div className="flex items-center justify-between px-4 py-2 bg-[#0d0d0d] border-b border-white/[0.04] flex-shrink-0">
       <div className="flex items-center gap-3">
         <h1 className="text-[13px] font-bold text-white/80">{pageName}</h1>
       </div>
 
       <div className="flex items-center gap-3">
-        <DataModePill mode={mode} />
-        <div className="flex items-center gap-2 rounded-md border border-white/[0.04] bg-white/[0.03] px-3 py-1.5">
+        <span className="text-[9px] px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium tracking-wider">
+          DEMO MODE
+        </span>
+        <div className="flex items-center gap-2 bg-white/[0.03] rounded-md px-3 py-1.5 border border-white/[0.04]">
           <Search size={12} className="text-white/20" />
           <input
             type="text"
             placeholder="Search users, tickets, agents..."
-            className="w-56 bg-transparent text-[11px] text-white/60 placeholder:text-white/20 outline-none"
+            className="bg-transparent text-[11px] text-white/60 placeholder:text-white/20 outline-none w-56"
           />
         </div>
-        <button
-          type="button"
-          className="relative rounded-md p-1.5 transition-colors hover:bg-white/[0.04]"
-        >
+        <button className="relative p-1.5 rounded-md hover:bg-white/[0.04] transition-colors">
           <Bell size={14} className="text-white/30" />
-          <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500" />
+          <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500" />
         </button>
-        <div className="flex items-center gap-2 rounded-md border border-white/[0.04] bg-white/[0.02] px-2 py-1">
-          <img src="./axe-logo-square.png" alt="AXE" className="h-5 w-5 rounded-full object-cover" />
+        <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-white/[0.02] border border-white/[0.04]">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
+            <span className="text-[8px] font-bold text-cyan-400">A</span>
+          </div>
         </div>
       </div>
     </div>

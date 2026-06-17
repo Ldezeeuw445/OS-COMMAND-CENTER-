@@ -1,16 +1,17 @@
 import { NavLink } from "react-router-dom";
 import {
-  Bot,
-  ChevronRight,
-  DollarSign,
-  GitBranch,
-  Headphones,
   LayoutDashboard,
   Package,
+  Bot,
   Server,
-  Settings,
+  DollarSign,
+  Headphones,
   TrendingUp,
   Users,
+  GitBranch,
+  Settings,
+  ChevronRight,
+  Zap,
 } from "lucide-react";
 
 const navSections = [
@@ -46,27 +47,23 @@ const navSections = [
 
 export default function Sidebar() {
   return (
-    <div className="flex w-[210px] flex-shrink-0 flex-col border-r border-white/[0.04] bg-[#0d0d0d]">
-      <div className="border-b border-white/[0.04] px-3 py-3">
+    <div className="w-[210px] bg-[#0d0d0d] border-r border-white/[0.04] flex flex-col flex-shrink-0">
+      <div className="px-3 py-3 border-b border-white/[0.04]">
         <div className="flex items-center gap-2">
-          <img
-            src="./axe-logo-square.png"
-            alt="AXE logo"
-            className="h-7 w-7 rounded border border-cyan-500/20 object-cover"
-          />
+          <div className="w-7 h-7 rounded bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
+            <Zap size={14} className="text-[#06b6d4]" />
+          </div>
           <div>
-            <div className="text-[11px] font-bold tracking-wide text-white/80">
-              AXE Command
-            </div>
+            <div className="text-[11px] font-bold text-white/80 tracking-wide">OS Command</div>
             <div className="text-[8px] tracking-wider text-white/30">CENTER</div>
           </div>
         </div>
       </div>
 
-      <nav className="scrollbar-hide flex-1 space-y-3 overflow-y-auto p-2">
+      <nav className="flex-1 p-2 space-y-3 overflow-y-auto scrollbar-hide">
         {navSections.map((section) => (
           <div key={section.title}>
-            <div className="mb-1 px-2.5 text-[8px] font-semibold uppercase tracking-widest text-white/20">
+            <div className="px-2.5 mb-1 text-[8px] text-white/20 uppercase tracking-widest font-semibold">
               {section.title}
             </div>
             <div className="space-y-0.5">
@@ -78,16 +75,15 @@ export default function Sidebar() {
                     to={item.to}
                     end={item.to === "/"}
                     className={({ isActive }) =>
-                      `flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[11px] transition-all ${
+                      `flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[11px] transition-all ${
                         isActive
                           ? "border border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
-                          : "text-white/35 hover:bg-white/[0.02] hover:text-white/60"
+                          : "text-white/35 hover:text-white/60 hover:bg-white/[0.02]"
                       }`
                     }
                   >
                     <Icon size={14} />
-                    <span className="flex-1">{item.label}</span>
-                    <ChevronRight size={12} className="text-white/10" />
+                    <span className="font-medium">{item.label}</span>
                   </NavLink>
                 );
               })}
@@ -95,6 +91,23 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
+      <div className="p-2 border-t border-white/[0.04]">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.02] cursor-pointer transition-colors">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
+            <span className="text-[8px] font-bold text-cyan-400">A</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] text-white/50 truncate">Administrator</div>
+            <div className="text-[8px] text-white/25 truncate">Full Access</div>
+          </div>
+          <ChevronRight size={10} className="text-white/15" />
+        </div>
+        <div className="mt-1 px-2 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span className="text-[9px] text-white/30">All systems operational</span>
+        </div>
+      </div>
     </div>
   );
 }

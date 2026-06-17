@@ -63,7 +63,16 @@
     @apply bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-colors;
   }
   .panel {
-    @apply rounded-lg border border-white/[0.04] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-2;
+    @apply rounded-lg border border-cyan-400/[0.14] bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-2;
+    transition: box-shadow 160ms ease, border-color 160ms ease;
+  }
+
+  .panel:hover {
+    border-color: rgba(34, 211, 238, 0.28);
+    box-shadow:
+      inset 0 0 0 1px rgba(6, 182, 212, 0.04),
+      0 0 0 1px rgba(6, 182, 212, 0.1),
+      0 0 18px rgba(6, 182, 212, 0.08);
   }
 }
 
@@ -133,5 +142,24 @@
 }
 .animate-marquee {
   animation: marquee 30s linear infinite;
+}
+
+/* Keep exact same UI, but scale up on wide screens */
+@media (min-width: 1400px) {
+  .app-shell {
+    transform: scale(1.08);
+    transform-origin: top left;
+    width: calc(100% / 1.08);
+    height: calc(100% / 1.08);
+  }
+}
+
+@media (min-width: 1800px) {
+  .app-shell {
+    transform: scale(1.15);
+    transform-origin: top left;
+    width: calc(100% / 1.15);
+    height: calc(100% / 1.15);
+  }
 }
 
